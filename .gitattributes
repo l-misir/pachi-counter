@@ -1,0 +1,5 @@
+# 改行コードはすべて LF（ハナハナカウンターの index.html は CRLF で、置換のたびに苦労した）
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary

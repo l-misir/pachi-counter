@@ -1,0 +1,126 @@
+/* ============================================================
+   ハナハナカウンター（index.html の <style>）から抜き出した画面の土台。
+   黒基調・ヘッダー40px・セルのグリッド・全画面モーダル・テンキー・振動用ラベル・押した後の増減表示。
+   そのまま <style> に貼って、機種固有の部分（ランプの色など）は削って使う
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; }
+:root {
+    --bg-color: #1a1a1a; --cell-bg: #444444; --grid-line: #111111;
+    --text-white: #ffffff;
+    --active-btn: #007aff;
+}
+
+/* メイン部分のスクロール完全無効化とダブルタップ拡大無効化（モーダルの中だけ pan-y でスクロール） */
+html, body {
+    background: var(--bg-color); color: var(--text-white);
+    font-family: -apple-system, sans-serif; margin: 0; padding: 0; height: 100%;
+    user-select: none; -webkit-user-select: none;
+    touch-action: none; overflow: hidden;
+    /* 横画面時の文字の拡大防止 */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+.container {
+    padding: 5px max(10px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+    width: 100%; height: calc(100dvh - 40px);
+    box-sizing: border-box; overflow: hidden; touch-action: none;
+}
+
+/* ヘッダー（高さ 40px。左アイコン・中央タイトル・右 ⚙️） */
+.header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 16px; background: #000; position: sticky; top: 0; z-index: 100;
+    border-bottom: 1px solid #333; height: 40px; box-sizing: border-box;
+}
+/* アイコンの大きさはそのまま、パディングで当たり判定を広げる */
+.header-icon {
+    font-size: 20px; cursor: pointer; color: white;
+    padding: 10px 20px; margin: -10px -20px;
+    display: inline-flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+}
+.header-title, .modal-title { font-size: 14px; font-weight: bold; border-bottom: 2px solid white; line-height: 1.2; }
+
+/* レイアウト: 縦画面は1列、横画面は左右2列 */
+.main-layout { display: flex; flex-direction: column; gap: 5px; width: 100%; }
+.col-left, .col-right { display: flex; flex-direction: column; width: 100%; }
+@media (orientation: landscape) {
+    .main-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
+    .label { margin-bottom: 1px; }
+}
+
+/* 見出し「＜ベル＞」とセルのグリッド */
+.section-title { text-align: center; margin: 6px 0 2px; font-size: 11px; font-weight: bold; }
+.grid { display: grid; gap: 1px; background: var(--grid-line); border: 1px solid var(--grid-line); margin-bottom: 5px; }
+.grid-2 { grid-template-columns: 1fr 1fr; }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-5 { grid-template-columns: repeat(5, 1fr); }
+
+.cell { background: var(--cell-bg); padding: 2px 2px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 30px; }
+.label { font-size: 9px; color: white; margin-bottom: -3px; pointer-events: none; }
+.value { font-size: 16px; font-weight: bold; line-height: 1.2; pointer-events: none; }
+.label-large { font-size: 16px !important; font-weight: bold; color: white; margin-bottom: 0; pointer-events: none; }
+
+/* 振動用: セル全体にかぶせる透明ラベル（中に非表示のスイッチ）。指のタップが直接スイッチを切り替える */
+.cell.t-btn { position: relative; }
+.haptic-tap { position: absolute; inset: 0; z-index: 1; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
+.haptic-tap input { display: none; }
+.touch-active { background: #55aaff !important; }   /* 押した（水色） */
+.minus-mode { background: #900 !important; }        /* 長押しでマイナス（赤） */
+.active-mode { background: var(--active-btn) !important; color: white; } /* 選択中のボタン */
+
+/* 押したボタンの下に出す増減（+1 / -1）。メイン画面の外の層に出すので描き直しで消えない */
+#tap-delta-layer { position: fixed; inset: 0; pointer-events: none; z-index: 90; }
+.tap-delta { position: absolute; transform: translateX(-50%); font-size: 11px; font-weight: bold; line-height: 1; padding: 1px 5px; border-radius: 6px; background: rgba(0,0,0,0.8); white-space: nowrap; }
+.tap-delta.plus { color: #6cf; }
+.tap-delta.minus { color: #ff6b6b; }
+.tap-delta.zero { color: #ddd; }
+.tap-delta.mark { color: #ffdd44; } /* 数ではなく文字を出すとき（ハナハナの「朝一」） */
+
+/* 入力モードの数値入力（16px 未満だと iOS がズームする） */
+.val-input { width: 100%; background: transparent; color: white; border: none; text-align: center; font-size: 16px; font-weight: bold; outline: none; }
+.cell input.val-input { padding: 0; margin: 0; height: 100%; line-height: 1.2; border-radius: 0; -webkit-appearance: none; box-sizing: border-box; }
+
+/* モーダル（全画面。ヘッダーはメイン画面と同じ 40px） */
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; flex-direction: column; }
+.modal.active { display: flex; }
+.modal-title { color: white; border-bottom: 2px solid white; }
+.modal-header {
+    flex: 0 0 auto; display: flex; justify-content: space-between; align-items: center;
+    padding: 0 16px; background: #000; border-bottom: 1px solid #333; height: 40px; box-sizing: border-box;
+}
+.modal-body { flex: 1 1 auto; overflow-y: auto; padding: 10px 15px max(40px, env(safe-area-inset-bottom)); touch-action: pan-y; }
+
+/* ボタンの大きさの基準（実戦履歴のフィルタボタン。「大きすぎる」と言われないように、これに合わせる） */
+.hist-filter-btn { flex: 1 1 0; min-width: 36px; padding: 7px 2px; background: #222; color: #aaa; border: 1px solid #333; border-radius: 5px; font-size: 11px; cursor: pointer; text-align: center; user-select: none; white-space: nowrap; }
+.hist-filter-btn.active { background: #0066cc; color: #fff; border-color: #0088ff; }
+
+/* 設定画面: 1行に設定を2つ */
+.setting-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.setting-item .cell { min-height: 34px; }
+.setting-item .label-large { font-size: 13px !important; }
+.export-btn { width: 100%; padding: 15px; background: #000; color: #0ff; border: 1px solid #0ff; margin-top: 20px; font-weight: bold; }
+.gas-input { width: 100%; padding: 8px; background: #333; color: #fff; border: 1px solid #555; border-radius: 5px; box-sizing: border-box; font-size: 16px; margin-top: 4px; }
+.gas-input::placeholder { color: #666; }
+
+/* テンキー（7 8 9 / 4 5 6 / 1 2 3 / ⌫ 0 決定。キーは左、表示は右） */
+.hit-display { background: #000; color: #fff; font-size: 22px; font-weight: bold; text-align: right; padding: 5px 10px; border-radius: 6px; margin-bottom: 6px; font-family: monospace; letter-spacing: 1px; min-height: 32px; box-sizing: border-box; }
+.hit-keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.hit-key { background: #333; color: #fff; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; padding: 8px 0; cursor: pointer; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+.hit-key:active { background: #555; }
+.hit-key.ok { background: #0a5; font-size: 13px; }
+.hit-key.del { background: #833; font-size: 14px; }
+
+/* 操作ログ（調査用。管理画面の下） */
+.tap-log { font-size: 10px; color: #aaa; background: #111; border: 1px solid #333; border-radius: 5px; padding: 6px 8px; margin: 4px 0 0; white-space: pre-wrap; word-break: break-all; font-family: monospace; line-height: 1.5; user-select: text; -webkit-user-select: text; }
+
+/* 古いタブの案内（最前面） */
+#stale-tab { display: none; position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.92); align-items: center; justify-content: center; padding: 20px; }
+#stale-tab.active { display: flex; }
+.stale-box { background: #1c1c1e; border: 2px solid #f80; border-radius: 10px; padding: 16px; max-width: 340px; text-align: center; }
+.stale-title { font-size: 15px; font-weight: bold; color: #fb6; margin-bottom: 8px; }
+.stale-msg { font-size: 12px; color: #ddd; line-height: 1.7; margin-bottom: 14px; }
+.stale-btn { padding: 10px 14px; background: #333; color: #fff; border: 1px solid #666; border-radius: 6px; font-size: 13px; }

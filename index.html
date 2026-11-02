@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <!-- 拡大させない（ダブルタップ・ピンチ）。viewport-fit=cover でノッチの下まで使い、余白は safe-area で取る -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>パチンコカウンター</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        :root {
+            --bg-color: #1a1a1a; --cell-bg: #444444; --grid-line: #111111;
+            --text-white: #ffffff;
+            --active-btn: #007aff;
+        }
+
+        /* メイン部分のスクロール完全無効化とダブルタップ拡大無効化 */
+        html, body {
+            background: var(--bg-color); color: var(--text-white);
+            font-family: -apple-system, sans-serif; margin: 0; padding: 0; height: 100%;
+            user-select: none; -webkit-user-select: none;
+            touch-action: none; overflow: hidden;
+            /* 横画面時の文字の拡大防止 */
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
+        .container {
+            padding: 5px max(10px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+            width: 100%; height: calc(100dvh - 40px);
+            box-sizing: border-box; overflow: hidden; touch-action: none;
+        }
+
+        /* ヘッダー（高さ 40px。中央タイトル） */
+        .header {
+            display: flex; justify-content: center; align-items: center;
+            padding: 8px 16px; background: #000; position: sticky; top: 0; z-index: 100;
+            border-bottom: 1px solid #333; height: 40px; box-sizing: border-box;
+        }
+        .header-title { font-size: 14px; font-weight: bold; border-bottom: 2px solid white; line-height: 1.2; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-title">パチンコカウンター</div>
+</div>
+
+<div class="container">
+    <div id="main-ui"></div>
+</div>
+
+<script>
+    // ダブルタップの拡大を止める
+    document.addEventListener('dblclick', function(e) { e.preventDefault(); }, { passive: false });
+
+    // 起動（画面・保存の仕組みは仕様が決まってから足す）
+    function startup() {}
+
+    window.onload = () => startup();
+</script>
+</body>
+</html>
